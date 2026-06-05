@@ -4,7 +4,7 @@ from langchain.chat_models import init_chat_model
 from langchain.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 
 from config.config import config
-from day1.tool import get_weather
+from day1.tools.weather import get_weather
 
 model_config = config().model
 

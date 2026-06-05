@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import Literal
 
 import requests
@@ -7,7 +7,30 @@ from pydantic import BaseModel, Field
 
 from config.config import config
 
+from paths import BASE_DIR
+
+import time
+import jwt
+
 tool_config = config().tool
+
+# Open PEM
+private_key = Path(BASE_DIR / tool_config.qweather_private_key_path).read_text(encoding="utf-8")
+
+payload = {
+    'iat': int(time.time()) - 30,
+    'exp': int(time.time()) + 3600,
+    'sub': tool_config.qweather_project_id
+}
+headers = {
+    'kid': tool_config.qweather_key_id,
+}
+
+# Generate JWT
+encoded_jwt = jwt.encode(payload, private_key, algorithm='EdDSA', headers = headers)
+
+print("encoded_jwt", encoded_jwt)
+
 
 class WeatherInput(BaseModel):
     """Input for weather queries."""
@@ -35,7 +58,7 @@ def _api_host() -> str:
 
 
 def _headers() -> dict:
-    api_token = tool_config.qweather_token
+    api_token = encoded_jwt # tool_config.qweather_token
     if not api_token:
         raise RuntimeError("缺少环境变量 QWEATHER_TOKEN，请填写和风天气 JWT Token")
 

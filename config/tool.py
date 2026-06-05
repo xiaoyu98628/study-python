@@ -14,3 +14,5 @@ class ToolConfig(BaseSettings):
     qweather_api_host: str = Field(default="", alias="QWEATHER_API_HOST", description="API Key")
     qweather_project_id: str = Field(default="", alias="QWEATHER_PROJECT_ID", description="Project ID")
     qweather_key_id: str = Field(default="", alias="QWEATHER_KEY_ID", description="Project ID")
+
+    tavily_api_key: str = Field(default="", alias="TAVILY_API_KEY", description="Tavily API Key")

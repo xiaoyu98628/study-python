@@ -29,9 +29,6 @@ headers = {
 # Generate JWT
 encoded_jwt = jwt.encode(payload, private_key, algorithm='EdDSA', headers = headers)
 
-print("encoded_jwt", encoded_jwt)
-
-
 class WeatherInput(BaseModel):
     """Input for weather queries."""
 

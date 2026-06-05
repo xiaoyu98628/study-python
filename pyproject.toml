@@ -11,4 +11,5 @@ dependencies = [
     "langchain-openai>=1.2.2",
     "pydantic-settings>=2.14.1",
     "pyjwt>=2.13.0",
+    "tavily-python>=0.7.25",
 ]

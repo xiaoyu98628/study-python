@@ -13,8 +13,8 @@ model_config = config().model
 model = init_chat_model(
     model="glm-5.1",
     model_provider="openai",
-    api_key=model_config.zai_api_key,
-    base_url=model_config.zai_base_url,
+    api_key=model_config.aliyun_api_key,
+    base_url=model_config.aliyun_base_url,
 ).bind_tools([get_weather, web_search, get_current_datetime])
 
 tools: dict[str, Any] = {

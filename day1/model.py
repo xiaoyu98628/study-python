@@ -1,3 +1,5 @@
+import logging
+from pathlib import Path
 from typing import Any
 
 from langchain.chat_models import init_chat_model
@@ -8,6 +10,22 @@ from day1.tools.fetch_url import fetch_url
 from day1.tools.time_tool import get_current_datetime
 from day1.tools.weather import get_weather
 from day1.tools.web_tool import web_search
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+LOG_DIR = BASE_DIR / "storage" / "logs"
+LOG_FILE = LOG_DIR / "app.log"
+
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+    ],
+)
+
+logger = logging.getLogger(__name__)
 
 model_config = config().model
 
@@ -47,23 +65,37 @@ while True:
         break
 
     messages.append(human_message)
+    logger.debug("user_input=%r messages_count=%s", user_input, len(messages))
 
     ai_message_chunk = None
 
 
     print("AI: ", end="", flush=True)
-    for chunk in model.stream(messages):
+    try:
+        for chunk in model.stream(messages):
 
-        if ai_message_chunk is None:
-            ai_message_chunk = chunk
-        else:
-            ai_message_chunk += chunk
+            logger.debug("final_stream_chunk %r",chunk)
 
-        if chunk.content:
-            print(chunk.content, end="", flush=True)
+            if ai_message_chunk is None:
+                ai_message_chunk = chunk
+            else:
+                ai_message_chunk += chunk
+
+            if chunk.content:
+                print(chunk.content, end="", flush=True)
+    except Exception:
+        logger.exception("first_model_stream_failed")
+        print()
+        continue
 
     print()
 
+    if ai_message_chunk is None:
+        logger.warning("first_model_stream_empty")
+        continue
+
+    logger.debug("first_ai_content=%r", ai_message_chunk.content)
+    logger.debug("first_ai_tool_calls=%r", ai_message_chunk.tool_calls)
 
     ai_message = AIMessage(
         content=ai_message_chunk.content,
@@ -79,22 +111,39 @@ while True:
         tool_name = tool_call["name"]
         tool_args = tool_call["args"]
 
-        tool_result = tools[tool_name].invoke(tool_args)
+        logger.debug("calling_tool name=%s args=%r", tool_name, tool_args)
+
+        try:
+            tool_result = tools[tool_name].invoke(tool_args)
+            logger.debug("tool_result name=%s result=%r", tool_name, tool_result)
+        except Exception:
+            logger.exception("tool_call_failed name=%s args=%r", tool_name, tool_args)
+            tool_result = "工具调用失败，错误已记录到日志。"
 
         messages.append(
             ToolMessage(
-                content=tool_result,
+                content=str(tool_result),
                 tool_call_id=tool_call["id"],
             )
         )
 
     final_content = ""
 
-    for chunk in model.stream(messages):
-        if chunk.content:
-            print(chunk.content, end="", flush=True)
-            final_content += chunk.content
+    try:
+        for chunk in model.stream(messages):
+            logger.debug("final_stream_chunk %r",chunk)
+
+            if chunk.content:
+                print(chunk.content, end="", flush=True)
+                final_content += chunk.content
+    except Exception:
+        logger.exception("final_model_stream_failed")
+        print()
+        continue
 
     print()
+
+    if not final_content:
+        logger.warning("final_content_empty")
 
     messages.append(AIMessage(content=final_content))

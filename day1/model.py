@@ -4,6 +4,7 @@ from langchain.chat_models import init_chat_model
 from langchain.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 
 from config.config import config
+from day1.tools.fetch_url import fetch_url
 from day1.tools.time_tool import get_current_datetime
 from day1.tools.weather import get_weather
 from day1.tools.web_tool import web_search
@@ -15,16 +16,18 @@ model = init_chat_model(
     model_provider="openai",
     api_key=model_config.aliyun_api_key,
     base_url=model_config.aliyun_base_url,
-).bind_tools([get_weather, web_search, get_current_datetime])
+).bind_tools([get_weather, web_search, fetch_url, get_current_datetime])
 
 tools: dict[str, Any] = {
     "get_weather": get_weather,
     "web_search": web_search,
+    "fetch_url": fetch_url,
     "get_current_datetime": get_current_datetime,
 }
 
 prompt = """
 当用户询问实时信息、新闻、价格、政策、网页内容或你不确定的信息时，优先使用联网工具。
+当用户提供具体 URL 或需要阅读搜索结果中的网页内容时，调用 fetch_url；不知道 URL 时先调用 web_search。
 当用户询问今天几号、周几、当前时间、日期换算等实时日期时间问题时，必须调用 get_current_datetime 工具，不要凭记忆猜测。
 回答涉及网页资料时，附上来源链接。
 不要编造来源。

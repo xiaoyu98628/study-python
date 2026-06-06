@@ -16,3 +16,4 @@ class ToolConfig(BaseSettings):
     qweather_key_id: str = Field(default="", alias="QWEATHER_KEY_ID", description="Project ID")
 
     tavily_api_key: str = Field(default="", alias="TAVILY_API_KEY", description="Tavily API Key")
+    amap_api_key: str = Field(default="", alias="AMAP_API_KEY", description="Amap Web Service API Key")

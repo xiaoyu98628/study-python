@@ -156,6 +156,7 @@ def main() -> None:
         if agent is None:
             agent = build_agent()
 
+        previous_messages = messages.copy()
         messages.append(HumanMessage(content=user_input))
         logger.debug("user_input=%r messages_count=%s", user_input, len(messages))
 
@@ -165,6 +166,8 @@ def main() -> None:
         except Exception:
             logger.exception("agent_stream_failed")
             print()
+            messages = previous_messages
+            print("本轮执行失败，已回滚对话上下文。详情请查看 storage/logs/app.log。")
             continue
 
         print()

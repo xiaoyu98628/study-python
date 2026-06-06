@@ -1,13 +1,7 @@
 from langchain.agents import create_agent
 
 from day1.model import build_model
-from day1.tools.fetch_url import fetch_url
-from day1.tools.location import get_current_location
-from day1.tools.time_tool import get_current_datetime
-from day1.tools.weather import get_weather
-from day1.tools.web_tool import web_search
-
-TOOLS = [get_weather, web_search, fetch_url, get_current_location, get_current_datetime]
+from day1.tools.registry import get_tools
 
 PROMPT = """
 当用户询问实时信息、新闻、价格、政策、网页内容或你不确定的信息时，优先使用联网工具。
@@ -22,6 +16,6 @@ PROMPT = """
 def build_agent():
     return create_agent(
         model=build_model(),
-        tools=TOOLS,
+        tools=get_tools(),
         system_prompt=PROMPT,
     )

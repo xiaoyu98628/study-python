@@ -13,5 +13,6 @@ dependencies = [
     "pydantic-settings>=2.14.1",
     "pyjwt>=2.13.0",
     "readability-lxml>=0.8.4.1",
+    "requests>=2.34.2",
     "tavily-python>=0.7.25",
 ]

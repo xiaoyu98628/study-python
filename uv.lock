@@ -842,6 +842,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pyjwt" },
     { name = "readability-lxml" },
+    { name = "requests" },
     { name = "tavily-python" },
 ]
 
@@ -855,6 +856,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "pyjwt", specifier = ">=2.13.0" },
     { name = "readability-lxml", specifier = ">=0.8.4.1" },
+    { name = "requests", specifier = ">=2.34.2" },
     { name = "tavily-python", specifier = ">=0.7.25" },
 ]
 

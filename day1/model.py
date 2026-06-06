@@ -1,9 +1,9 @@
 import logging
 from pathlib import Path
-from typing import Any
 
+from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
-from langchain.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 
 from config.config import config
 from day1.tools.fetch_url import fetch_url
@@ -28,24 +28,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-model_config = config().model
+TOOLS = [get_weather, web_search, fetch_url, get_current_location, get_current_datetime]
 
-model = init_chat_model(
-    model="glm-5.1",
-    model_provider="openai",
-    api_key=model_config.aliyun_api_key,
-    base_url=model_config.aliyun_base_url,
-).bind_tools([get_weather, web_search, fetch_url, get_current_location, get_current_datetime])
-
-tools: dict[str, Any] = {
-    "get_weather": get_weather,
-    "web_search": web_search,
-    "fetch_url": fetch_url,
-    "get_current_location": get_current_location,
-    "get_current_datetime": get_current_datetime,
-}
-
-prompt = """
+PROMPT = """
 当用户询问实时信息、新闻、价格、政策、网页内容或你不确定的信息时，优先使用联网工具。
 当用户提供具体 URL 或需要阅读搜索结果中的网页内容时，调用 fetch_url；不知道 URL 时先调用 web_search。
 当用户询问当前位置、当前城市、我在哪里等问题时，调用 get_current_location；该工具基于高德 IP 定位，只能返回大致位置。
@@ -54,99 +39,105 @@ prompt = """
 不要编造来源。
 """
 
-system_message = SystemMessage(content=prompt)
 
-messages: list[HumanMessage | SystemMessage | AIMessage | ToolMessage] = [system_message]
-
-while True:
-
-    user_input = input("USER：")
-
-    human_message = HumanMessage(content=user_input)
-
-    if user_input == "exit":
-        break
-
-    messages.append(human_message)
-    logger.debug("user_input=%r messages_count=%s", user_input, len(messages))
-
-    ai_message_chunk = None
-
-
-    print("AI: ", end="", flush=True)
-    try:
-        for chunk in model.stream(messages):
-
-            logger.debug("final_stream_chunk %r",chunk)
-
-            if ai_message_chunk is None:
-                ai_message_chunk = chunk
-            else:
-                ai_message_chunk += chunk
-
-            if chunk.content:
-                print(chunk.content, end="", flush=True)
-    except Exception:
-        logger.exception("first_model_stream_failed")
-        print()
-        continue
-
-    print()
-
-    if ai_message_chunk is None:
-        logger.warning("first_model_stream_empty")
-        continue
-
-    logger.debug("first_ai_content=%r", ai_message_chunk.content)
-    logger.debug("first_ai_tool_calls=%r", ai_message_chunk.tool_calls)
-
-    ai_message = AIMessage(
-        content=ai_message_chunk.content,
-        tool_calls=ai_message_chunk.tool_calls,
+def _build_agent():
+    model_config = config().model
+    model = init_chat_model(
+        model="glm-5.1",
+        model_provider="openai",
+        api_key=model_config.aliyun_api_key,
+        base_url=model_config.aliyun_base_url,
+    )
+    return create_agent(
+        model=model,
+        tools=TOOLS,
+        system_prompt=PROMPT,
     )
 
-    messages.append(ai_message)
 
-    if not ai_message_chunk.tool_calls:
-        continue
+def _message_text(message: AIMessage) -> str:
+    return _content_text(message.content)
 
-    for tool_call in ai_message.tool_calls:
-        tool_name = tool_call["name"]
-        tool_args = tool_call["args"]
 
-        logger.debug("calling_tool name=%s args=%r", tool_name, tool_args)
+def _content_text(content: object) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict) and item.get("type") == "text":
+                parts.append(str(item.get("text", "")))
+        return "".join(parts)
+    return str(content)
 
+
+def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessage]:
+    final_state = None
+    streamed_content = ""
+
+    for mode, data in agent.stream(
+        {"messages": messages},
+        config={"recursion_limit": 10},
+        stream_mode=["messages", "values"],
+    ):
+        if mode == "messages":
+            token, metadata = data
+            logger.debug("agent_stream_token metadata=%r token=%r", metadata, token)
+            content = _content_text(getattr(token, "content", ""))
+            if content:
+                print(content, end="", flush=True)
+                streamed_content += content
+        elif mode == "values":
+            final_state = data
+            logger.debug("agent_stream_state keys=%r", list(data.keys()))
+
+    if final_state is None:
+        raise RuntimeError("agent stream 没有返回最终状态")
+
+    final_messages = final_state["messages"]
+    ai_messages = [message for message in final_messages if isinstance(message, AIMessage)]
+    if not ai_messages:
+        raise RuntimeError("agent stream 没有返回 AIMessage")
+
+    final_content = _message_text(ai_messages[-1])
+    if not streamed_content and final_content:
+        print(final_content, end="", flush=True)
+
+    logger.debug(
+        "final_ai_content=%r messages_count=%s",
+        final_content,
+        len(final_messages),
+    )
+    return final_messages
+
+
+def main() -> None:
+    agent = None
+    messages: list[BaseMessage] = []
+
+    while True:
+        user_input = input("USER：")
+        if user_input == "exit":
+            break
+
+        if agent is None:
+            agent = _build_agent()
+
+        messages.append(HumanMessage(content=user_input))
+        logger.debug("user_input=%r messages_count=%s", user_input, len(messages))
+
+        print("AI: ", end="", flush=True)
         try:
-            tool_result = tools[tool_name].invoke(tool_args)
-            logger.debug("tool_result name=%s result=%r", tool_name, tool_result)
+            messages = _stream_agent_response(agent, messages)
         except Exception:
-            logger.exception("tool_call_failed name=%s args=%r", tool_name, tool_args)
-            tool_result = "工具调用失败，错误已记录到日志。"
+            logger.exception("agent_stream_failed")
+            print()
+            continue
 
-        messages.append(
-            ToolMessage(
-                content=str(tool_result),
-                tool_call_id=tool_call["id"],
-            )
-        )
-
-    final_content = ""
-
-    try:
-        for chunk in model.stream(messages):
-            logger.debug("final_stream_chunk %r",chunk)
-
-            if chunk.content:
-                print(chunk.content, end="", flush=True)
-                final_content += chunk.content
-    except Exception:
-        logger.exception("final_model_stream_failed")
         print()
-        continue
 
-    print()
 
-    if not final_content:
-        logger.warning("final_content_empty")
-
-    messages.append(AIMessage(content=final_content))
+if __name__ == "__main__":
+    main()

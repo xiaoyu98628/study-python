@@ -64,6 +64,8 @@ def render_skills_metadata_prompt(skills: tuple[SkillMetadata, ...] | None = Non
         "你拥有以下 skills。每个 skill 的 description 描述了何时使用它。",
         "当用户问题匹配某个 skill 时，必须先调用 read_file 读取该 skill 的 path，再遵守 SKILL.md 正文中的指令。",
         "不要仅凭 skill metadata 执行 skill；metadata 只用于判断是否需要读取对应的 SKILL.md。",
+        "如果需要使用 skill，本轮第一步只能调用 read_file 读取对应 SKILL.md；不要在同一步并行调用其他工具。",
+        "读取 SKILL.md 并理解正文后，才能继续调用该 skill 指令中需要的其他工具。",
     ]
 
     for skill in available_skills:

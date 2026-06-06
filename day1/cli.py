@@ -42,7 +42,24 @@ def _content_text(content: object) -> str:
 
 def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessage]:
     final_state = None
-    streamed_content = ""
+    printed_section = False
+    current_section = None
+
+    def print_section(section: str, content: str) -> None:
+        nonlocal printed_section, current_section
+        if section != current_section:
+            if printed_section:
+                print()
+            print(f"\n--- {section} ---")
+            printed_section = True
+            current_section = section
+        print(content, end="", flush=True)
+
+    def finish_section() -> None:
+        nonlocal current_section
+        if current_section is not None:
+            print()
+            current_section = None
 
     for mode, data in agent.stream(
         {"messages": messages},
@@ -51,14 +68,26 @@ def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessa
     ):
         if mode == "messages":
             token, metadata = data
+            node = metadata.get("langgraph_node")
             logger.debug("agent_stream_token metadata=%r token=%r", metadata, token)
             content = _content_text(getattr(token, "content", ""))
-            if content:
-                print(content, end="", flush=True)
-                streamed_content += content
+
+            if node == "model":
+                if content:
+                    print_section("assistant", content)
+            elif node == "tools":
+                finish_section()
+                if content:
+                    print_section(f"tool:{getattr(token, 'name', 'unknown')}", content)
+            elif content:
+                finish_section()
+                print_section(node or "message", content)
         elif mode == "values":
+            finish_section()
             final_state = data
             logger.debug("agent_stream_state keys=%r", list(data.keys()))
+
+    finish_section()
 
     if final_state is None:
         raise RuntimeError("agent stream 没有返回最终状态")
@@ -69,9 +98,6 @@ def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessa
         raise RuntimeError("agent stream 没有返回 AIMessage")
 
     final_content = _message_text(ai_messages[-1])
-    if not streamed_content and final_content:
-        print(final_content, end="", flush=True)
-
     logger.debug(
         "final_ai_content=%r messages_count=%s",
         final_content,

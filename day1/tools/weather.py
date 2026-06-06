@@ -1,33 +1,61 @@
+import time
 from pathlib import Path
 from typing import Literal
 
+import jwt
 import requests
 from langchain.tools import tool
 from pydantic import BaseModel, Field
 
 from config.config import config
-
 from paths import BASE_DIR
 
-import time
-import jwt
 
 tool_config = config().tool
 
-# Open PEM
-private_key = Path(BASE_DIR / tool_config.qweather_private_key_path).read_text(encoding="utf-8")
+_QWEATHER_TOKEN_TTL_SECONDS = 3600
+_QWEATHER_TOKEN_REFRESH_WINDOW_SECONDS = 300
+_qweather_jwt: str | None = None
+_qweather_jwt_expires_at = 0
 
-payload = {
-    'iat': int(time.time()) - 30,
-    'exp': int(time.time()) + 3600,
-    'sub': tool_config.qweather_project_id
-}
-headers = {
-    'kid': tool_config.qweather_key_id,
-}
 
-# Generate JWT
-encoded_jwt = jwt.encode(payload, private_key, algorithm='EdDSA', headers = headers)
+def _generate_qweather_jwt() -> tuple[str, int]:
+    if not tool_config.qweather_private_key_path:
+        raise RuntimeError("缺少环境变量 QWEATHER_PRIVATE_KEY_PATH")
+    if not tool_config.qweather_project_id:
+        raise RuntimeError("缺少环境变量 QWEATHER_PROJECT_ID")
+    if not tool_config.qweather_key_id:
+        raise RuntimeError("缺少环境变量 QWEATHER_KEY_ID")
+
+    private_key_path = BASE_DIR / tool_config.qweather_private_key_path
+    private_key = Path(private_key_path).read_text(encoding="utf-8")
+
+    now = int(time.time())
+    expires_at = now + _QWEATHER_TOKEN_TTL_SECONDS
+    payload = {
+        "iat": now - 30,
+        "exp": expires_at,
+        "sub": tool_config.qweather_project_id,
+    }
+    headers = {
+        "kid": tool_config.qweather_key_id,
+    }
+
+    token = jwt.encode(payload, private_key, algorithm="EdDSA", headers=headers)
+    return token, expires_at
+
+
+def _get_qweather_jwt() -> str | None:
+    global _qweather_jwt, _qweather_jwt_expires_at
+
+    now = int(time.time())
+    refresh_at = _qweather_jwt_expires_at - _QWEATHER_TOKEN_REFRESH_WINDOW_SECONDS
+    if _qweather_jwt and now < refresh_at:
+        return _qweather_jwt
+
+    _qweather_jwt, _qweather_jwt_expires_at = _generate_qweather_jwt()
+    return _qweather_jwt
+
 
 class WeatherInput(BaseModel):
     """Input for weather queries."""
@@ -55,12 +83,8 @@ def _api_host() -> str:
 
 
 def _headers() -> dict:
-    api_token = encoded_jwt # tool_config.qweather_token
-    if not api_token:
-        raise RuntimeError("缺少环境变量 QWEATHER_TOKEN，请填写和风天气 JWT Token")
-
     return {
-        "Authorization": f"Bearer {api_token}",
+        "Authorization": f"Bearer {_get_qweather_jwt()}",
         "Accept": "application/json",
     }
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from day1.agent import build_agent
+from day1.sandbox.registry import cleanup_sandbox_session
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 LOG_DIR = BASE_DIR / "storage" / "logs"
@@ -151,6 +152,13 @@ def main() -> None:
     while True:
         user_input = input("USER：")
         if user_input == "exit":
+            try:
+                cleanup_result = cleanup_sandbox_session()
+                logger.debug("sandbox_cleanup_on_exit result=%r", cleanup_result)
+                print(cleanup_result)
+            except Exception:
+                logger.exception("sandbox_cleanup_on_exit_failed")
+                print("sandbox 清理失败，详情请查看 storage/logs/app.log。")
             break
 
         if agent is None:

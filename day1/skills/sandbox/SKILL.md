@@ -14,7 +14,8 @@ When using this skill:
 3. Use `sandbox_write_file` before running generated code that needs a file.
 4. Use `sandbox_read_file` to inspect files or outputs in the sandbox.
 5. Use `sandbox_stop` when the sandbox is no longer needed.
-6. Keep commands focused and avoid long-running background processes in the first version.
+6. Use `sandbox_delete` when the user explicitly asks to delete the sandbox.
+7. Keep commands focused and avoid long-running background processes in the first version.
 
 ## Tools
 
@@ -22,3 +23,4 @@ When using this skill:
 - sandbox_write_file
 - sandbox_read_file
 - sandbox_stop
+- sandbox_delete

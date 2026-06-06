@@ -25,6 +25,28 @@ class DaytonaSandboxSession:
         self._sandbox.stop()
         return "sandbox 已停止"
 
+    def delete(self) -> str:
+        self._sandbox.delete()
+        return "sandbox 已删除"
+
+    def stop_and_delete(self) -> str:
+        errors = []
+
+        try:
+            self._sandbox.stop()
+        except Exception as exc:
+            errors.append(f"stop 失败：{exc}")
+
+        try:
+            self._sandbox.delete()
+        except Exception as exc:
+            errors.append(f"delete 失败：{exc}")
+
+        if errors:
+            raise RuntimeError("；".join(errors))
+
+        return "sandbox 已停止并删除"
+
 
 class DaytonaProvider:
     def __init__(self):

@@ -5,6 +5,6 @@ from dataclasses import dataclass, field
 class Skill:
     name: str
     description: str
-    when_to_use: str
-    instructions: tuple[str, ...]
+    body: str
+    path: str
     tool_names: tuple[str, ...] = field(default_factory=tuple)

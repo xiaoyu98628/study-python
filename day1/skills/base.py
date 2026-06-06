@@ -1,10 +1,8 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class Skill:
+class SkillMetadata:
     name: str
     description: str
-    body: str
     path: str
-    tool_names: tuple[str, ...] = field(default_factory=tuple)

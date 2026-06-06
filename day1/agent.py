@@ -1,6 +1,7 @@
 from langchain.agents import create_agent
 
 from day1.model import build_model
+from day1.skills.registry import render_skills_prompt
 from day1.tools.registry import get_tools
 
 PROMPT = """
@@ -13,9 +14,13 @@ PROMPT = """
 """
 
 
+def build_system_prompt() -> str:
+    return f"{PROMPT.strip()}\n\n{render_skills_prompt()}"
+
+
 def build_agent():
     return create_agent(
         model=build_model(),
         tools=get_tools(),
-        system_prompt=PROMPT,
+        system_prompt=build_system_prompt(),
     )

@@ -45,4 +45,12 @@ sandbox_run
 sandbox_write_file
 sandbox_read_file
 sandbox_stop
+sandbox_delete
+sandbox_status
+```
+
+sandbox 生命周期日志会写入：
+
+```text
+storage/logs/sandbox.log
 ```

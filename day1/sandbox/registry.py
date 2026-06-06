@@ -15,14 +15,17 @@ def get_sandbox_session() -> SandboxSession:
 
 
 def stop_sandbox_session() -> str:
-    global _session
-
     if _session is None:
         return "没有正在运行的 sandbox"
 
-    result = _session.stop()
-    _session = None
-    return result
+    return _session.stop()
+
+
+def sandbox_session_status() -> str:
+    if _session is None:
+        return "没有正在运行的 sandbox"
+
+    return _session.status()
 
 
 def delete_sandbox_session() -> str:

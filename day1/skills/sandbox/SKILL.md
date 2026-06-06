@@ -15,7 +15,8 @@ When using this skill:
 4. Use `sandbox_read_file` to inspect files or outputs in the sandbox.
 5. Use `sandbox_stop` when the sandbox is no longer needed.
 6. Use `sandbox_delete` when the user explicitly asks to delete the sandbox.
-7. Keep commands focused and avoid long-running background processes in the first version.
+7. Use `sandbox_status` when the user asks which sandbox is active or asks for sandbox state.
+8. Keep commands focused and avoid long-running background processes in the first version.
 
 ## Tools
 
@@ -24,3 +25,4 @@ When using this skill:
 - sandbox_read_file
 - sandbox_stop
 - sandbox_delete
+- sandbox_status

@@ -1,7 +1,12 @@
 from langchain.tools import tool
 from pydantic import BaseModel, Field
 
-from day1.sandbox.registry import delete_sandbox_session, get_sandbox_session, stop_sandbox_session
+from day1.sandbox.registry import (
+    delete_sandbox_session,
+    get_sandbox_session,
+    sandbox_session_status,
+    stop_sandbox_session,
+)
 
 
 def _sandbox_error(tool_name: str, exc: Exception) -> str:
@@ -66,3 +71,12 @@ def sandbox_delete() -> str:
         return delete_sandbox_session()
     except Exception as exc:
         return _sandbox_error("sandbox_delete", exc)
+
+
+@tool
+def sandbox_status() -> str:
+    """查看当前远程 sandbox 会话状态。"""
+    try:
+        return sandbox_session_status()
+    except Exception as exc:
+        return _sandbox_error("sandbox_status", exc)

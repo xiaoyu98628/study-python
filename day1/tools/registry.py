@@ -5,6 +5,7 @@ from day1.tools.sandbox_tool import (
     sandbox_delete,
     sandbox_read_file,
     sandbox_run,
+    sandbox_status,
     sandbox_stop,
     sandbox_write_file,
 )
@@ -26,6 +27,7 @@ TOOLS = [
     sandbox_write_file,
     sandbox_stop,
     sandbox_delete,
+    sandbox_status,
 ]
 
 

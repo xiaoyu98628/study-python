@@ -8,6 +8,7 @@ from day1.agent import build_agent
 BASE_DIR = Path(__file__).resolve().parents[1]
 LOG_DIR = BASE_DIR / "storage" / "logs"
 LOG_FILE = LOG_DIR / "app.log"
+TOOL_LOG_FILE = LOG_DIR / "tool.log"
 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -20,6 +21,40 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+tool_logger = logging.getLogger("day1.tool")
+tool_logger.setLevel(logging.DEBUG)
+tool_logger.propagate = False
+tool_handler = logging.FileHandler(TOOL_LOG_FILE, encoding="utf-8")
+tool_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"))
+tool_logger.addHandler(tool_handler)
+
+
+def _tool_calls(message: object) -> list[dict]:
+    tool_calls = getattr(message, "tool_calls", None)
+    if isinstance(tool_calls, list):
+        return tool_calls
+    return []
+
+
+def _log_tool_call(call: dict) -> None:
+    tool_logger.debug(
+        "tool_call name=%r args=%r id=%r",
+        call.get("name"),
+        call.get("args"),
+        call.get("id"),
+    )
+
+
+def _log_tool_result(message: object) -> None:
+    tool_name = getattr(message, "name", None)
+    tool_call_id = getattr(message, "tool_call_id", None)
+    content = _content_text(getattr(message, "content", ""))
+    tool_logger.debug(
+        "tool_result name=%r tool_call_id=%r content_preview=%r",
+        tool_name,
+        tool_call_id,
+        content[:1000],
+    )
 
 
 def _message_text(message: AIMessage) -> str:
@@ -70,6 +105,8 @@ def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessa
             token, metadata = data
             node = metadata.get("langgraph_node")
             logger.debug("agent_stream_token metadata=%r token=%r", metadata, token)
+            for call in _tool_calls(token):
+                _log_tool_call(call)
             content = _content_text(getattr(token, "content", ""))
 
             if node == "model":
@@ -77,6 +114,7 @@ def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessa
                     print_section("assistant", content)
             elif node == "tools":
                 finish_section()
+                _log_tool_result(token)
                 if content:
                     print_section(f"tool:{getattr(token, 'name', 'unknown')}", content)
             elif content:

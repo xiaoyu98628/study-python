@@ -1,12 +1,14 @@
 from pydantic import BaseModel
 
 from config.model import ModelConfig
+from config.sandbox import SandboxConfig
 from config.tool import ToolConfig
 
 
 class Config(BaseModel):
     model: ModelConfig
     tool: ToolConfig
+    sandbox: SandboxConfig
 
 
 def config() -> Config:
@@ -14,4 +16,5 @@ def config() -> Config:
     return Config(
         model=ModelConfig(),
         tool=ToolConfig(),
+        sandbox=SandboxConfig(),
     )

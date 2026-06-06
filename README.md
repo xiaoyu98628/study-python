@@ -20,3 +20,29 @@ OK
 ERROR day1/skills/foo/SKILL.md: frontmatter 缺少字段：name
 WARNING day1/skills/bar/SKILL.md: name 与目录名不一致：name='baz', directory='bar'
 ```
+
+## Sandbox
+
+项目使用 Daytona 作为第一版远程 sandbox provider。
+
+需要在 `.env` 中配置：
+
+```env
+SANDBOX_PROVIDER="daytona"
+DAYTONA_API_KEY=""
+DAYTONA_API_URL=""
+DAYTONA_TARGET=""
+```
+
+其中 `DAYTONA_API_KEY` 必填；`DAYTONA_API_URL` 和 `DAYTONA_TARGET` 可以按 Daytona 账号配置填写。
+
+sandbox skill 会按渐进式披露流程触发：模型先读取 `day1/skills/sandbox/SKILL.md`，再使用 sandbox tools。
+
+当前提供的 sandbox tools：
+
+```text
+sandbox_run
+sandbox_write_file
+sandbox_read_file
+sandbox_stop
+```

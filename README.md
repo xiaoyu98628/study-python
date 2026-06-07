@@ -82,3 +82,12 @@ sandbox 生命周期日志会写入：
 ```text
 storage/logs/sandbox.log
 ```
+
+测试样例：
+```text
+USER：今天上海天气怎么样？需要带伞吗？
+USER：帮我搜索一下 LangChain 最新版本有什么变化，并附来源
+USER：读取 README.md，总结这个项目现在有哪些能力
+USER：写一个 Python 脚本计算 1 到 100 的和，在 sandbox 里运行
+USER：搜索 Python 3.14 的新特性，整理成 5 点
+```

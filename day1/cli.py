@@ -1,4 +1,5 @@
 import logging
+import traceback
 from pathlib import Path
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -145,6 +146,38 @@ def _stream_agent_response(agent, messages: list[BaseMessage]) -> list[BaseMessa
     return final_messages
 
 
+def _user_facing_error(exc: Exception) -> str:
+    details = _exception_details(exc)
+    lower_details = details.lower()
+
+    if "structuredtool does not support sync invocation" in lower_details:
+        return "工具调用失败：有异步工具被同步执行了，通常是 MCP 工具没有同步适配。"
+    if "langchain_mcp_adapters" in lower_details and "no module named" in lower_details:
+        return "MCP 加载失败：缺少 langchain-mcp-adapters 依赖。"
+    if "no module named 'mcp'" in lower_details:
+        return "MCP 加载失败：缺少 mcp 依赖。"
+    if "docker" in lower_details and ("no such file or directory" in lower_details or "not found" in lower_details):
+        return "MCP Docker 启动失败：没有找到 docker 命令。"
+    if "docker" in lower_details and ("no such image" in lower_details or "pull access denied" in lower_details):
+        return "MCP Docker 启动失败：找不到配置里的 Docker 镜像。"
+    if "mcp" in lower_details and ("closed" in lower_details or "exited" in lower_details):
+        return "MCP 工具调用失败：外部 MCP Server 已退出或连接中断。"
+    if "tool" in lower_details:
+        return f"工具调用失败：{_compact_error(exc)}"
+    return f"本轮执行失败：{_compact_error(exc)}"
+
+
+def _exception_details(exc: Exception) -> str:
+    return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+
+
+def _compact_error(exc: Exception) -> str:
+    message = str(exc).strip()
+    if not message:
+        message = exc.__class__.__name__
+    return message.replace("\n", " ")[:300]
+
+
 def main() -> None:
     agent = None
     messages: list[BaseMessage] = []
@@ -161,21 +194,21 @@ def main() -> None:
                 print("sandbox 清理失败，详情请查看 storage/logs/app.log。")
             break
 
-        if agent is None:
-            agent = build_agent()
-
         previous_messages = messages.copy()
         messages.append(HumanMessage(content=user_input))
         logger.debug("user_input=%r messages_count=%s", user_input, len(messages))
 
         print("AI: ", end="", flush=True)
         try:
+            if agent is None:
+                agent = build_agent()
             messages = _stream_agent_response(agent, messages)
-        except Exception:
+        except Exception as exc:
             logger.exception("agent_stream_failed")
             print()
             messages = previous_messages
-            print("本轮执行失败，已回滚对话上下文。详情请查看 storage/logs/app.log。")
+            print(f"{_user_facing_error(exc)}")
+            print("已回滚本轮对话上下文。详情请查看 storage/logs/app.log。")
             continue
 
         print()

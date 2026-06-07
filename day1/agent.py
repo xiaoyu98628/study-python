@@ -1,5 +1,6 @@
 from langchain.agents import create_agent
 
+from day1.mcp_client import load_mcp_tools
 from day1.model import build_model
 from day1.skills.registry import render_skills_prompt
 from day1.tools.registry import get_tools
@@ -19,8 +20,9 @@ def build_system_prompt() -> str:
 
 
 def build_agent():
+    tools = [*get_tools(), *load_mcp_tools()]
     return create_agent(
         model=build_model(),
-        tools=get_tools(),
+        tools=tools,
         system_prompt=build_system_prompt(),
     )

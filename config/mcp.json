@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "time": {
+      "enabled": true,
+      "transport": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "study-mcp-time"
+      ]
+    }
+  }
+}

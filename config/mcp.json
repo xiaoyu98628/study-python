@@ -1,7 +1,7 @@
 {
   "servers": {
     "time": {
-      "enabled": true,
+      "enabled": false,
       "transport": "stdio",
       "command": "docker",
       "args": [

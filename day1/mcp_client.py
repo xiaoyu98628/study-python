@@ -3,6 +3,7 @@ import json
 import logging
 from pathlib import Path
 
+from collections.abc import Iterable
 from typing import Any
 
 from langchain_core.tools import BaseTool, StructuredTool
@@ -28,9 +29,9 @@ async def _load_mcp_tools(config: dict) -> list[BaseTool]:
         return []
 
     try:
-        client = MultiServerMCPClient(config)
+        client = MultiServerMCPClient(config, tool_name_prefix=True)
         tools = await client.get_tools()
-        return [_make_sync_compatible_tool(tool) for tool in tools]
+        return [_make_sync_compatible_tool(tool, mcp_server_names=config.keys()) for tool in tools]
     except Exception:
         logger.exception("mcp_tools_load_failed")
         return []
@@ -90,13 +91,14 @@ def _to_langchain_connection(server_config: dict) -> dict | None:
     return connection
 
 
-def _make_sync_compatible_tool(tool: BaseTool) -> BaseTool:
+def _make_sync_compatible_tool(tool: BaseTool, mcp_server_names: Iterable[str]) -> BaseTool:
     if not isinstance(tool, StructuredTool) or tool.func is not None:
         return tool
     if tool.coroutine is None:
         return tool
 
     async_call = tool.coroutine
+    tool_name = _mcp_tool_name(tool.name, mcp_server_names)
 
     def sync_call(**kwargs: Any) -> Any:
         return asyncio.run(async_call(**kwargs))
@@ -105,7 +107,7 @@ def _make_sync_compatible_tool(tool: BaseTool) -> BaseTool:
         return await async_call(**kwargs)
 
     return StructuredTool(
-        name=tool.name,
+        name=tool_name,
         description=tool.description,
         args_schema=tool.args_schema,
         return_direct=tool.return_direct,
@@ -114,6 +116,16 @@ def _make_sync_compatible_tool(tool: BaseTool) -> BaseTool:
         func=sync_call,
         coroutine=wrapped_async_call,
     )
+
+
+def _mcp_tool_name(tool_name: str, mcp_server_names: Iterable[str]) -> str:
+    if tool_name.startswith("mcp_"):
+        return tool_name
+    for server_name in mcp_server_names:
+        prefix = f"{server_name}_"
+        if tool_name.startswith(prefix):
+            return f"mcp_{tool_name}"
+    return f"mcp_{tool_name}"
 
 if __name__ == '__main__':
     print(load_mcp_tools())

@@ -23,7 +23,10 @@ WARNING day1/skills/bar/SKILL.md: name 与目录名不一致：name='baz', direc
 
 ## Sandbox
 
-项目使用 Daytona 作为第一版远程 sandbox provider。
+项目支持两种 sandbox provider：
+
+- `daytona`：远程 sandbox provider。
+- `docker`：本机 Docker 容器 sandbox provider。
 
 需要在 `.env` 中配置：
 
@@ -35,6 +38,31 @@ DAYTONA_TARGET=""
 ```
 
 其中 `DAYTONA_API_KEY` 必填；`DAYTONA_API_URL` 和 `DAYTONA_TARGET` 可以按 Daytona 账号配置填写。
+
+如果要使用本机 Docker sandbox：
+
+```env
+SANDBOX_PROVIDER="docker"
+DOCKER_SANDBOX_IMAGE="python:3.13-slim"
+DOCKER_SANDBOX_NETWORK="none"
+DOCKER_SANDBOX_MEMORY="512m"
+DOCKER_SANDBOX_CPUS="1.0"
+DOCKER_SANDBOX_CONTAINER_PREFIX="day1-sbx-"
+```
+
+Docker sandbox 会为当前会话创建一个容器，宿主机只挂载：
+
+```text
+storage/sandboxes/<session-id> -> /workspace
+```
+
+默认安全策略：
+
+- 容器内以 `1000:1000` 非 root 用户运行。
+- 默认禁用网络：`DOCKER_SANDBOX_NETWORK="none"`。
+- 根文件系统只读，只开放 `/workspace` 和 `/tmp` 写入。
+- drop 所有 Linux capabilities，并启用 `no-new-privileges`。
+- `sandbox_read_file` 和 `sandbox_write_file` 只能访问 `/workspace` 内路径，不能通过 `..` 逃逸。
 
 sandbox skill 会按渐进式披露流程触发：模型先读取 `day1/skills/sandbox/SKILL.md`，再使用 sandbox tools。
 

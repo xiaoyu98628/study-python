@@ -4,6 +4,7 @@ import socket
 from urllib.parse import urljoin, urlparse
 
 import httpx
+import trafilatura
 from bs4 import BeautifulSoup
 from langchain.tools import tool
 from pydantic import BaseModel, Field
@@ -105,7 +106,7 @@ def _soup_text(html: str) -> str:
     return _normalize_whitespace(soup.get_text(separator="\n"))
 
 
-def _extract_html(html: str) -> tuple[str, str]:
+def _extract_html(html: str, url: str = "") -> tuple[str, str]:
     soup = BeautifulSoup(html, "html.parser")
     fallback_title = _normalize_whitespace(soup.title.get_text()) if soup.title else ""
     fallback_content = _soup_text(html)
@@ -113,9 +114,26 @@ def _extract_html(html: str) -> tuple[str, str]:
     try:
         document = Document(html)
         title = _normalize_whitespace(document.short_title() or fallback_title)
-        content = _soup_text(document.summary(html_partial=True))
     except Exception:
         title = fallback_title
+
+    try:
+        content = trafilatura.extract(
+            html,
+            url=url or None,
+            include_comments=False,
+            include_tables=False,
+        )
+    except Exception:
+        content = None
+
+    if content:
+        return title, _normalize_whitespace(content)
+
+    try:
+        document = Document(html)
+        content = _soup_text(document.summary(html_partial=True))
+    except Exception:
         content = fallback_content
 
     if not content:
@@ -145,7 +163,7 @@ def fetch_url(url: str, max_chars: int = 6000) -> str:
     title = ""
 
     if content_type in {"text/html", "application/xhtml+xml"}:
-        title, content = _extract_html(response.text)
+        title, content = _extract_html(response.text, str(response.url))
     elif (
         content_type.startswith("text/")
         or content_type in {"application/json", "application/xml", "text/xml"}

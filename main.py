@@ -1,5 +1,4 @@
-def main():
-    print("Hello from study-python!")
+from day1.cli import main
 
 
 if __name__ == "__main__":

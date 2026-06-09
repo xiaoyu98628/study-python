@@ -1,0 +1,20 @@
+{
+  "user_profile": {
+    "language": "zh-CN",
+    "goal": "构建一个可扩展、可维护的通用 agent 项目"
+  },
+  "response_preferences": {
+    "style": "先给结论，再给关键原因、方案或代码",
+    "depth": "根据问题复杂度调整",
+    "ask_before_code_changes": true
+  },
+  "project_context": {
+    "name": "agent-project",
+    "summary": "一个可扩展、可维护的通用 agent 项目",
+    "entrypoint": "",
+    "agent_file": "",
+    "has_tools": true,
+    "has_skills": true,
+    "has_sandbox": false
+  }
+}

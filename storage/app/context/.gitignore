@@ -3,3 +3,4 @@
 !.gitignore
 
 !context.json
+!context.example.json

@@ -1,0 +1,24 @@
+{
+  "user_profile": {
+    "language": "zh-CN",
+    "goal": "构建一个可扩展、可维护的通用 agent 项目"
+  },
+  "response_preferences": {
+    "style": "先给结论，再给关键原因、方案或代码",
+    "depth": "根据问题复杂度调整",
+    "ask_before_code_changes": true
+  },
+  "project_context": {
+    "name": "study-python",
+    "summary": "一个基于 LangChain create_agent 的本地 CLI agent 项目",
+    "entrypoint": "day1/cli.py",
+    "agent_file": "day1/agent.py",
+    "prompt_dir": "day1/prompts",
+    "context_file": "storage/app/context/context.json",
+    "skills_dir": "day1/skills",
+    "tools_dir": "day1/tools",
+    "has_tools": true,
+    "has_skills": true,
+    "has_sandbox": false
+  }
+}

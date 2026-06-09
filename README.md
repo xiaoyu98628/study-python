@@ -50,6 +50,38 @@ uv run python -m day1.prompts.preview --stats
 characters: 2986
 ```
 
+## Context 配置
+
+运行时 context 文件位于：
+
+```text
+storage/app/context/context.json
+```
+
+它会被注入到最终 system prompt 中，作为模型理解用户偏好和当前项目背景的参考信息。可参考同目录模板：
+
+```text
+storage/app/context/context.example.json
+```
+
+校验 context 文件结构：
+
+```bash
+uv run python -m day1.context --validate
+```
+
+通过时会输出：
+
+```text
+OK
+```
+
+如果要校验其他路径的 context 文件：
+
+```bash
+uv run python -m day1.context --validate --path storage/app/context/context.example.json
+```
+
 ## Sandbox
 
 项目支持两种 sandbox provider：

@@ -64,6 +64,18 @@ storage/app/context/context.json
 storage/app/context/context.example.json
 ```
 
+如果需要临时禁用某些 skills，可以在 `project_context.disabled_skills` 中配置 skill 名称。例如：
+
+```json
+{
+  "project_context": {
+    "disabled_skills": ["sandbox"]
+  }
+}
+```
+
+禁用后的 skill 不会出现在最终 system prompt 的 skills metadata 中。
+
 校验 context 文件结构：
 
 ```bash

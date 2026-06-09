@@ -1,6 +1,6 @@
 from langchain.agents import create_agent
 
-from day1.context import render_context_prompt
+from day1.context import get_disabled_skills, load_context, render_context_prompt
 from day1.mcp_client import load_mcp_tools
 from day1.model import build_model
 from day1.skills.registry import render_skills_prompt
@@ -17,12 +17,13 @@ def read_prompt(name: str) -> str:
 
 
 def build_system_prompt() -> str:
+    context = load_context()
     sections = [
         read_prompt("system.md"),
         read_prompt("context.md"),
-        render_context_prompt(),
+        render_context_prompt(context),
         read_prompt("tools.md"),
-        render_skills_prompt(),
+        render_skills_prompt(disabled_skills=get_disabled_skills(context)),
     ]
     return "\n\n".join(section for section in sections if section.strip())
 

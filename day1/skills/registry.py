@@ -58,8 +58,12 @@ def list_skill_metadata() -> tuple[SkillMetadata, ...]:
     return tuple(_load_skill_metadata(path) for path in skill_paths)
 
 
-def render_skills_metadata_prompt(skills: tuple[SkillMetadata, ...] | None = None) -> str:
+def render_skills_metadata_prompt(
+    skills: tuple[SkillMetadata, ...] | None = None,
+    disabled_skills: set[str] | None = None,
+) -> str:
     available_skills = skills or list_skill_metadata()
+    disabled = disabled_skills or set()
     lines = [
         "你拥有以下 skills。每个 skill 的 description 描述了何时使用它。",
         "当用户问题匹配某个 skill 时，必须先调用 read_file 读取该 skill 的 path，再遵守 SKILL.md 正文中的指令。",
@@ -69,6 +73,8 @@ def render_skills_metadata_prompt(skills: tuple[SkillMetadata, ...] | None = Non
     ]
 
     for skill in available_skills:
+        if skill.name in disabled:
+            continue
         lines.extend(
             [
                 "",
@@ -85,5 +91,8 @@ def get_skills() -> tuple[SkillMetadata, ...]:
     return list_skill_metadata()
 
 
-def render_skills_prompt(skills: tuple[SkillMetadata, ...] | None = None) -> str:
-    return render_skills_metadata_prompt(skills)
+def render_skills_prompt(
+    skills: tuple[SkillMetadata, ...] | None = None,
+    disabled_skills: set[str] | None = None,
+) -> str:
+    return render_skills_metadata_prompt(skills, disabled_skills)

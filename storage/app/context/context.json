@@ -9,10 +9,14 @@
     "ask_before_code_changes": true
   },
   "project_context": {
-    "name": "agent-project",
-    "summary": "一个可扩展、可维护的通用 agent 项目",
-    "entrypoint": "",
-    "agent_file": "",
+    "name": "study-python",
+    "summary": "一个基于 LangChain create_agent 的本地 CLI agent 项目",
+    "entrypoint": "day1/cli.py",
+    "agent_file": "day1/agent.py",
+    "prompt_dir": "day1/prompts",
+    "context_file": "storage/app/context/context.json",
+    "skills_dir": "day1/skills",
+    "tools_dir": "day1/tools",
     "has_tools": true,
     "has_skills": true,
     "has_sandbox": false

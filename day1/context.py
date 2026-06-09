@@ -56,31 +56,11 @@ def validate_context(context: dict[str, Any]) -> list[str]:
         for key in ("name", "summary", "entrypoint", "agent_file", "prompt_dir", "context_file", "skills_dir", "tools_dir"):
             if key in project_context and not isinstance(project_context[key], str):
                 errors.append(f"project_context.{key} 必须是 string")
-        for key in ("has_tools", "has_skills", "has_sandbox"):
+        for key in ("has_tools", "has_skills"):
             if key in project_context and not isinstance(project_context[key], bool):
                 errors.append(f"project_context.{key} 必须是 boolean")
-        if "disabled_skills" in project_context:
-            disabled_skills = project_context["disabled_skills"]
-            if not isinstance(disabled_skills, list):
-                errors.append("project_context.disabled_skills 必须是 array")
-            else:
-                for index, skill_name in enumerate(disabled_skills):
-                    if not isinstance(skill_name, str):
-                        errors.append(f"project_context.disabled_skills[{index}] 必须是 string")
 
     return errors
-
-
-def get_disabled_skills(context: dict[str, Any]) -> set[str]:
-    project_context = context.get("project_context", {})
-    if not _is_dict(project_context):
-        return set()
-
-    disabled_skills = project_context.get("disabled_skills", [])
-    if not isinstance(disabled_skills, list):
-        return set()
-
-    return {skill_name for skill_name in disabled_skills if isinstance(skill_name, str)}
 
 
 def render_context_prompt(context: dict[str, Any] | None = None) -> str:

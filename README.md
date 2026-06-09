@@ -64,17 +64,35 @@ storage/app/context/context.json
 storage/app/context/context.example.json
 ```
 
-如果需要临时禁用某些 skills，可以在 `project_context.disabled_skills` 中配置 skill 名称。例如：
+## Agent 配置
+
+Agent 能力开关配置位于：
+
+```text
+config/agent.json
+```
+
+可参考模板：
+
+```text
+config/agent.example.json
+```
+
+如果需要临时禁用某些 skills，可以在 `disabled_skills` 中配置 skill 名称。例如：
 
 ```json
 {
-  "project_context": {
-    "disabled_skills": ["sandbox"]
-  }
+  "disabled_skills": ["sandbox"]
 }
 ```
 
 禁用后的 skill 不会出现在最终 system prompt 的 skills metadata 中。
+
+校验 agent 配置：
+
+```bash
+uv run python -m day1.agent_config --validate
+```
 
 校验 context 文件结构：
 

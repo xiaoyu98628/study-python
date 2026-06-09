@@ -18,10 +18,6 @@
     "skills_dir": "day1/skills",
     "tools_dir": "day1/tools",
     "has_tools": true,
-    "has_skills": true,
-    "has_sandbox": false,
-    "disabled_skills": [
-      "sandbox"
-    ]
+    "has_skills": true
   }
 }

@@ -21,6 +21,35 @@ ERROR day1/skills/foo/SKILL.md: frontmatter 缺少字段：name
 WARNING day1/skills/bar/SKILL.md: name 与目录名不一致：name='baz', directory='bar'
 ```
 
+## Prompt 预览
+
+查看最终发送给模型的 system prompt：
+
+```bash
+uv run python -m day1.prompts.preview
+```
+
+该命令会按当前项目的组合逻辑输出完整 system prompt，包括：
+
+- `day1/prompts/system.md`
+- `day1/prompts/context.md`
+- `storage/app/context/context.json`
+- `day1/prompts/tools.md`
+- skills metadata
+
+如果只想在输出末尾额外查看 prompt 长度统计：
+
+```bash
+uv run python -m day1.prompts.preview --stats
+```
+
+输出末尾会包含：
+
+```text
+--- stats ---
+characters: 2986
+```
+
 ## Sandbox
 
 项目支持两种 sandbox provider：
